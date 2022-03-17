@@ -7,13 +7,13 @@
   <meta name="viewport" content="width=device-width">
 
   <!-- syntax highlighting CSS -->
-  <link rel="stylesheet" href="/bach_do/css/syntax.css">
-  <link rel="stylesheet" href="/bach_do/css/codeblock.scss">
+  <link rel="stylesheet" href="/css/syntax.css">
+  <link rel="stylesheet" href="/css/codeblock.scss">
 
 
   <!-- CSS -->
-  <link rel="stylesheet" href="/bach_do/css/reset.css">
-  <link rel="stylesheet" href="/bach_do/css/main.css">
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/main.css">
   <link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
 
    <!--- MathJax -->
@@ -23,9 +23,9 @@
   <link href='http://fonts.googleapis.com/css?family=Bitter:400,700,400italic|Open+Sans:400italic,600italic,400,600' rel='stylesheet' type='text/css'>
 </head>
 <body>
-  <header style="background-image: url(/bach_do);">
+  <header style="background-image: url();">
   <div class="container post-container">
-    <a href="/bach_do/" class="home_button"></a>
+    <a href="/" class="home_button"></a>
     <div class="inner-container">
       <h1>Pass</h1>
       <ul class="meta">
@@ -39,7 +39,7 @@
           <span>
             Category
           </span>
-          jekyll
+          blog
         </li>
         <li>
           <span>
@@ -62,19 +62,27 @@
 
 <p>My password(s) has definitely been leaked on the internet. I’ve changed like 8 password over the course of 6 year, all of them being very similar to each other though. So now I’m at a point where: A. I can’t really generate more memorable password that is not “change-few-letters-from-old-passwords-until-the-site-accept-it”, and B. my muscle memory is not large enough to hold 4 of 20-characters long password. “Maybe it’s time to use an actual password managers” I thought so.</p>
 
-<p>I’ve always been taken back by the idea of using password managers, mostly from the stuffs where they sync your password to “the cloud”. How the hell can I be sure that my passwords are stored correctly ? What happens if the server goes down ? What the hell is running in their code ?</p>
-
-<p>The code being open source is not enough of clarity for me,</p>
+<p>I’ve always been taken back by the idea of using password managers, mostly from
+the <a href="https://bugs.chromium.org/p/project-zero/issues/detail?id=1930">seemless UI integration</a> 
+that does some magics I don’t understand.</p>
 
 <h1 id="pass">Pass</h1>
 
-<p>I just had everything pretty much mapped out in my mind while searching for Pass. The most simplistic password managers would just encrypt passwords and metadata inside a file. You can pipe your password directly to system’s clipboard, no need for fancy browser extensions that would actually expose you to more vulnerability ( as a general rule complexity creates insecurity ). Pass just check every tickbox for me while being a very simple implementation.</p>
+<p>Pass just fit my ( biased ) premonition of a minimal password manager. The most
+simplistic password managers would just encrypt passwords and metadata inside a
+file. You can pipe your password directly to system’s clipboard, no need for
+fancy browser extensions.</p>
 
-<p>Password Database ? It’s directories. Encryption ? Trusty GnuPG. Syncing ? Pass uses Git, and I didn’t even know I needed that, that also means you can host your own cloud storage with a simple Git’s Remote setup.</p>
+<p>I don’t want to come across as preaching Minimalism as a solution for our digital
+pollution. I don’t believe Less is More, but <a href="https://aabookshop.net/?wpsc-product=less-is-enough">Just Enough</a>.
+Your life are more likely to actually benefit from good UI interface, and in that case, using LastPass is way 
+better than using nothing at all. Also you may requires someone be accountable for your security,
+to provide regular updates and maintenance for your software ( at a price of course ). And in this case,
+a paid professional product is your perfect fit.</p>
 
 <h1 id="introducing-gpg-aka-gnu-privacyguard">Introducing GPG a.k.a GNU PrivacyGuard</h1>
 
-<p>The backbone of Pass’s cryptography. Pass relies on GPG ( GnuPG ) for encryption, so I will explain a bit about how you can generate an encryption key. And most importantly, how to manage your keyrings ( a collection of crypto keys ).</p>
+<p>The backbone of Pass’s cryptography. Pass relies on GPG ( GnuPG ) for encryption.</p>
 
 <h2 id="1-generating-keys">1. Generating Key(s)</h2>
 
@@ -164,11 +172,11 @@ Is this correct? (y/N) y
 
 <pre><code>GnuPG needs to construct a user ID to identify your key.
 
-Real name: bach
+Real name: b
 Name must be at least 5 characters long
 </code></pre>
 
-<p>I’m disapointed, if you ever have to deal with real names <a href="https://www.kalzumeus.com/2010/06/17/falsehoods-programmers-believe-about-names/">Falsehoods Programmers Believe About Names</a>.</p>
+<p>I’m dissapointed, if you ever have to deal with real names, please read <a href="https://www.kalzumeus.com/2010/06/17/falsehoods-programmers-believe-about-names/">Falsehoods Programmers Believe About Names</a>.</p>
 
 <p>A prompt will appear for you to type in your passphrase, this is the “master password” that you’re going to use to unlock all the other password. My method of choice is to use <code>openssl rand -hex 16</code> to generate a random password for this. My muscle memory can afford to remember password up to maybe 50 characters.</p>
 
@@ -176,7 +184,7 @@ Name must be at least 5 characters long
 gpg: checking the trustdb
 gpg: marginals needed: 3  completes needed: 1  trust model: pgp
 gpg: depth: 0  valid:   1  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 1u
-/home/bachdo/.gnupg/pubring.kbx
+/home/b/.gnupg/pubring.kbx
 sec   rsa4096/66D5C32402AC83E4 2021-06-07 [SC]
       8CB15A37988805546FF6730F66D5C32402AC83E4
 uid                 [ultimate] bachhh@test.io (foo) &lt;bachhh@test.io&gt;
@@ -184,14 +192,14 @@ ssb   rsa4096/C54BEB3EF77FCFD5 2021-06-07 [E]
 
 </code></pre>
 
-<p>Now you can see that I have 2 keys created, <code>66D5C32402AC83E4</code> is marked <code>[SC]</code> which means it’s for <strong>sign and certificate</strong>, and <code>C54BEB3EF77FCFD5</code> makred as <code>[E]</code> which means it’s for <strong>encryption</strong>.</p>
+<p>Now you can see we have 2 keys created, <code>66D5C32402AC83E4</code> is marked <code>[SC]</code> which means it’s for <strong>sign and certificate</strong>, and <code>C54BEB3EF77FCFD5</code> makred as <code>[E]</code> which means it’s for <strong>encryption</strong>.</p>
 
 <h2 id="pass-init">Pass init</h2>
 
 <p>Initiating your password database, which create a new directory, with GPG’s key ID as an argument.</p>
 
 <pre><code>~$ pass init --path=$HOME/.password-store/ C54BEB3EF77FCFD5
-mkdir: created directory '/home/bachdo/.password-store/'
+mkdir: created directory '/home/b/.password-store/'
 Password store initialized for C54BEB3EF77FCFD5
 </code></pre>
 
@@ -199,37 +207,37 @@ Password store initialized for C54BEB3EF77FCFD5
 
 <p>You can import new password into the database</p>
 
-<pre><code>bachdo@server.io:~$ pass insert test/test.com
-mkdir: created directory '/home/bachdo/.password-store/test'
+<pre><code>bach@server.io:~$ pass insert test/test.com
+mkdir: created directory '/home/bach/.password-store/test'
 Enter password for test/test.com:
 
 </code></pre>
 
 <p>It is recommended to generate a random new password for each service you use, which is guaranteed to be untraceable.</p>
 
-<pre><code>bachdo@server.io:~$ pass generate personal/facebook.com/bach@server.io
-mkdir: created directory '/home/bachdo/.password-store/personal'
-mkdir: created directory '/home/bachdo/.password-store/personal/facebook.com'
-The generated password for personal/facebook.com/bach@server.io is:
+<pre><code>bach@server.io:~$ pass generate personal/social.com/bach@server.io
+mkdir: created directory '/home/bach/.password-store/personal'
+mkdir: created directory '/home/bach/.password-store/personal/social.com'
+The generated password for personal/social.com/bach@server.io is:
 P8!s-W)%/k]l?%4}w4($25e&gt;g
-bachdo@server.io:~$ pass list
+bach@server.io:~$ pass list
 Password Store
 └── personal
-    └── facebook.com
+    └── social.com
         └── bach@server.io
-bachdo@server.io:~$
+bach@server.io:~$
 </code></pre>
 
 <p>I would keep the database at most 3-levels directory, any more than that would probably be really hard to use.</p>
 
 <h2 id="show">Show</h2>
 
-<pre><code>bachdo@server.io:~$ pass show personal/facebook.com/bach@server.io
+<pre><code>bach@server.io:~$ pass show personal/social.com/bach@server.io
 P8!s-W)%/k]l?%4}w4($25e&gt;g
 </code></pre>
 
 <p>Pass has an amazing -c option which will copy directly to your clipboard and not showing the password on the screen, the clipboard will then be cleared after 45 secs to avoid accidental leak</p>
-<pre><code>$ pass show personal/facebook.com/bach@server.io -c
+<pre><code>$ pass show personal/social.com/bach@server.io -c
 </code></pre>
 
 <h2 id="sync-with-other-devices">Sync with other devices</h2>

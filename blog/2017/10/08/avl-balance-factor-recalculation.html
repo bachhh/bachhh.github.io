@@ -7,13 +7,13 @@
   <meta name="viewport" content="width=device-width">
 
   <!-- syntax highlighting CSS -->
-  <link rel="stylesheet" href="/bach_do/css/syntax.css">
-  <link rel="stylesheet" href="/bach_do/css/codeblock.scss">
+  <link rel="stylesheet" href="/css/syntax.css">
+  <link rel="stylesheet" href="/css/codeblock.scss">
 
 
   <!-- CSS -->
-  <link rel="stylesheet" href="/bach_do/css/reset.css">
-  <link rel="stylesheet" href="/bach_do/css/main.css">
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/main.css">
   <link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
 
    <!--- MathJax -->
@@ -23,9 +23,9 @@
   <link href='http://fonts.googleapis.com/css?family=Bitter:400,700,400italic|Open+Sans:400italic,600italic,400,600' rel='stylesheet' type='text/css'>
 </head>
 <body>
-  <header style="background-image: url(/bach_do/images/akira.jpg);">
+  <header style="background-image: url(/images/akira.jpg);">
   <div class="container post-container">
-    <a href="/bach_do/" class="home_button"></a>
+    <a href="/" class="home_button"></a>
     <div class="inner-container">
       <h1>Calculate balance factor when rotating AVL tree node</h1>
       <ul class="meta">
@@ -92,11 +92,11 @@ When a node have a balance factor of 2 or -2, rotations can help rebalance the t
 
 <p>What we have here is the general case of left rotation, keep in mind that A, B and G denote a subtree of any heigh ( including 0 in which case they will be NULL). While X and Y are a node</p>
 
-<p><img src="/bach_do/assets/avl.jpg" alt="Before" /></p>
+<p><img src="/assets/avl.jpg" alt="Before" /></p>
 
 <p>After a left rotation, the balance factor changed for both X and Y, and we wish to carry out update on these value, without the overhead of recalculating the height of any subtree A, B or G ( since only the balance factor is stored inside a node, calculating the height of subtree require depth traversal)</p>
 
-<p><img src="/bach_do/assets/avlleft.jpg" alt="After" /></p>
+<p><img src="/assets/avlleft.jpg" alt="After" /></p>
 
 <p>We use the below notation for our calculation</p>
 

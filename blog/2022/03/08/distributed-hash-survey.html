@@ -7,13 +7,13 @@
   <meta name="viewport" content="width=device-width">
 
   <!-- syntax highlighting CSS -->
-  <link rel="stylesheet" href="/bach_do/css/syntax.css">
-  <link rel="stylesheet" href="/bach_do/css/codeblock.scss">
+  <link rel="stylesheet" href="/css/syntax.css">
+  <link rel="stylesheet" href="/css/codeblock.scss">
 
 
   <!-- CSS -->
-  <link rel="stylesheet" href="/bach_do/css/reset.css">
-  <link rel="stylesheet" href="/bach_do/css/main.css">
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/main.css">
   <link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
 
    <!--- MathJax -->
@@ -23,9 +23,9 @@
   <link href='http://fonts.googleapis.com/css?family=Bitter:400,700,400italic|Open+Sans:400italic,600italic,400,600' rel='stylesheet' type='text/css'>
 </head>
 <body>
-  <header style="background-image: url(/bach_do/images/akira.jpg);">
+  <header style="background-image: url(/images/akira.jpg);">
   <div class="container post-container">
-    <a href="/bach_do/" class="home_button"></a>
+    <a href="/" class="home_button"></a>
     <div class="inner-container">
       <h1>Distributed Hash Table</h1>
       <ul class="meta">
@@ -56,7 +56,9 @@
 
 <article>
   <div class="container">
-    <h1 id="distributed-hash-table">Distributed Hash Table</h1>
+    <p>This is my note but I rewrote it to a publishable form :-?.</p>
+
+<h1 id="distributed-hash-table">Distributed Hash Table</h1>
 
 <p>The distributed Hash Table problem is pretty much what it sounds like: a hash table distributed throughout multiple machines in a network. The Hash Table answers this query for any given object:</p>
 
@@ -70,90 +72,136 @@ write the Object in server 1, and later client B read it. B knows immediately an
 without asking A, that ojbect O belongs to server 1, B connect and ask for it’s
 value directly.</p>
 
-<p>In Distributed Hash Table, however, complication arise when “node” can come
-offline / online offline at anytime, without warning.</p>
+<p>But the naive approach is bad, we can look at the behaviour of a cluster of
+node to see how bad it is.</p>
 
-<p>Assume we have 3 servers [0, 1, 2]</p>
-
-<table>
-  <thead>
-    <tr>
-      <th>Object-Hash</th>
-      <th>Dest (hash % mod)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>A-12</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <td>B-13</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <td>C-14</td>
-      <td>2</td>
-    </tr>
-    <tr>
-      <td>X-9</td>
-      <td>0</td>
-    </tr>
-    <tr>
-      <td>Y-10</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <td>Z-11</td>
-      <td>2</td>
-    </tr>
-  </tbody>
-</table>
-
-<p>Now, administrator decide to add a new server 3, total n = 4,</p>
+<!-- < example of mass rehashing during migration > -->
+<p>Assume we have 4 nodes: A B C and D, node D goes offline ( maybe bad network )
+for 5 minutes, then it’s backup again.</p>
 
 <table>
   <thead>
     <tr>
-      <th>Object-Hash</th>
-      <th>Dest (hash % mod)</th>
+      <th>key</th>
+      <th>Dest (normal) -</th>
+      <th>New Dest ( downtime )</th>
+      <th>Moved</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td>A-12</td>
-      <td>0</td>
+      <td>key0</td>
+      <td>node1:A</td>
+      <td>node2:A</td>
+      <td>moved:False</td>
     </tr>
     <tr>
-      <td>B-13</td>
-      <td>1</td>
+      <td>key1</td>
+      <td>node1:B</td>
+      <td>node2:B</td>
+      <td>moved:False</td>
     </tr>
     <tr>
-      <td>C-14</td>
-      <td>2</td>
+      <td>key2</td>
+      <td>node1:C</td>
+      <td>node2:C</td>
+      <td>moved:False</td>
     </tr>
     <tr>
-      <td>X-9</td>
-      <td>1</td>
+      <td>key3</td>
+      <td>node1:D</td>
+      <td>node2:A</td>
+      <td>moved:True</td>
     </tr>
     <tr>
-      <td>Y-10</td>
-      <td>2</td>
+      <td>key4</td>
+      <td>node1:A</td>
+      <td>node2:B</td>
+      <td>moved:True</td>
     </tr>
     <tr>
-      <td>Z-11</td>
-      <td>3</td>
+      <td>key5</td>
+      <td>node1:B</td>
+      <td>node2:C</td>
+      <td>moved:True</td>
+    </tr>
+    <tr>
+      <td>key6</td>
+      <td>node1:C</td>
+      <td>node2:A</td>
+      <td>moved:True</td>
+    </tr>
+    <tr>
+      <td>key7</td>
+      <td>node1:D</td>
+      <td>node2:B</td>
+      <td>moved:True</td>
+    </tr>
+    <tr>
+      <td>key8</td>
+      <td>node1:A</td>
+      <td>node2:C</td>
+      <td>moved:True</td>
+    </tr>
+    <tr>
+      <td>key9</td>
+      <td>node1:B</td>
+      <td>node2:A</td>
+      <td>moved:True</td>
+    </tr>
+    <tr>
+      <td>key10</td>
+      <td>node1:C</td>
+      <td>node2:B</td>
+      <td>moved:True</td>
+    </tr>
+    <tr>
+      <td>key11</td>
+      <td>node1:D</td>
+      <td>node2:C</td>
+      <td>moved:True</td>
+    </tr>
+    <tr>
+      <td>key12</td>
+      <td>node1:A</td>
+      <td>node2:A</td>
+      <td>moved:False</td>
+    </tr>
+    <tr>
+      <td>key13</td>
+      <td>node1:B</td>
+      <td>node2:B</td>
+      <td>moved:False</td>
+    </tr>
+    <tr>
+      <td>key14</td>
+      <td>node1:C</td>
+      <td>node2:C</td>
+      <td>moved:False</td>
     </tr>
   </tbody>
 </table>
 
-<p>We can se that object [Z,X] hash moved. This is particularly hazardous in a network environment: Server come on and
-off-line few times every minute. You don’t want to be moving 10M hash entries
-every time some random server A disconnected from the network.</p>
+<p>In total, 9 keys were moved during 5 minutes, that’s over half total.</p>
+
+<p>The problem is amplified when server come on and off-line few times every
+minutes ( or seconds, depending on how tolerant you’re to network lag). So
+every 5 minutes, more than half of our keys are shuffled around the cluster. I
+can imagine a case where the down node is back online before we are even done
+with the object transfer process.</p>
+
+<p>So people came up with a concept of <strong>minimal disruption</strong> property for these
+distributed datastructures: Given a cluster of M nodes and K object, each node
+storing M/K keys-value object. In case 1 node goes offline, if only M/K keys are
+expected to be moved from it’s original position, then the cluster achieved</p>
+
+<p><strong>minimal disruption</strong>.
+It’s fancy way to say: don’t move around more keys than what’s a single down
+node have.</p>
 
 <pre><code>A distributed system is one in which the failure of a computer you did not even
 know existed can render your own computer unusable.
-- Leslie Lamport
+- funni Leslie Lamport quote
 </code></pre>
 
 <p>In an ideal Distributed Hash Table, when there’s a change to our cluster’s
@@ -162,6 +210,51 @@ A server leaving the system should not cause redistribution of other server’s
 data, only it’s own. A new server join should only “steal” as many data from others as
 it’s full capacity. The problem of DHT calls for a different family of hashing scheme,
 the Stable Hashing scheme.</p>
+
+<h2 id="redis">Redis</h2>
+
+<p>Before consistent hash,
+<a href="https://redis.io/docs/manual/scaling/#redis-cluster-data-sharding">Redis</a>
+employ a pretty fun method of for mitigate the problem of key-rehash during migration:</p>
+
+<p>Intead of hashing individual key, Redis packs them into bin, which they termed <strong>Hash Slot</strong>. There are 16384 hash slots in total. For a given key, <code>hash slot</code> is chosen using <code>CRC16(key) % 16384</code>.</p>
+
+<p>The 16384 slots is then distributed to real physicals nodes. So in a way, we
+can see <strong>Hash Slot</strong> as some kind of a <strong>logical nodes</strong>, not too dissimilar
+to other Consistent Hash methods below.</p>
+
+<pre><code>+---+
+|   | --&gt; [ slot 1]---&gt; Node 1
+|   | --&gt; [ slot 2]/
+|key| --&gt; [ slot 3]\ 
+|   | --&gt; [ slot 4]---&gt; Node 2
+|   | --&gt; [ slot 5]/
++---+
+</code></pre>
+
+<p>The number 16384 is chosen based on engineering <a href="https://github.com/redis/redis/issues/2576">design</a>: 
+A node specify it’s <strong>Hash Slot</strong> configuration as a <strong>bitmap</strong>: If node A is the owner of 
+hash slot 0, 3 and 7, it’s bitmap would be <code>10001001</code>  ( big-endian ).</p>
+<ul>
+  <li>With 65k hash slots, the size of this <em>info bitmap</em> would be 8KB.</li>
+  <li>With 16384 hash slots, the size of this <em>info bitmap</em> would only be 2KB.</li>
+</ul>
+
+<p>On why shouldn’t Redis goes wiht smaller slots number: the higher number of
+slots, the more masters you’re allowed to have. Theoretically you could have
+16384 masters with 1 slot each, or 1000 masters with 16 slots each.</p>
+
+<p>Side notes:</p>
+<blockquote>
+  <p>Note that in small clusters the bitmap would be hard to compress because when
+N is small the bitmap would have slots/N bits set that is a large percentage of
+bits set.</p>
+</blockquote>
+
+<p>I don’t quite follow this reasoning since bitmap compression like LRE achieve
+good ratio based on <em>repeating bit pattern</em> rather than the pure number of bit set.
+i.e.: <code>11111111100000000</code> gets more compression than <code>010101010101010</code>.
+So if the mechanism for a node claiming Hash Slot is by range, LRE should be good ?</p>
 
 <h2 id="highest-random-weight">Highest Random Weight</h2>
 
@@ -179,15 +272,48 @@ the value with highest weight.</p>
    Weight(Object, Node[i]) &gt; Weight(Object, Node[j]) 
    for all i, j in the set of Node [0, n]\]
 
-<p>HRW has a very useful property of <strong>minimal disruption</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Object/Key</th>
+      <th>Node</th>
+      <th>Score(Node, Object)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>K</td>
+      <td>A</td>
+      <td>12</td>
+    </tr>
+    <tr>
+      <td>K</td>
+      <td>B</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>K</td>
+      <td>C</td>
+      <td>8</td>
+    </tr>
+    <tr>
+      <td>K</td>
+      <td>D</td>
+      <td>32       Winner</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>HRW helps us achieve the <strong>minimal disruption</strong> property during migration:</p>
 
 <p>When node i exit, all objected stored on that node will be evenly
 redistributed. Since Weight(Object, Node[i]) is no longer the maximum value
 in the set, we pick the second highest weight from all the remaining nodes.</p>
 
 <p>When node k enter, all objects are re-hashed with new node’s value 
-Weight(Object, Node[i]) ( the cost of computing hash key is minimal compare to
-the cost of moving data ), only the object which satisfies the condition:</p>
+Weight(Object, Node[i]) ( assuming the cost of computing hash key is minimal
+compare to the cost of moving data ), only the object which satisfies the
+condition:</p>
 
 \[Weight(Object, Node[i]) &gt; Weight(Object, Node[j]) 
     \\ 
@@ -195,55 +321,95 @@ the cost of moving data ), only the object which satisfies the condition:</p>
 
 <p>Get redistributed, all other object stay intact.</p>
 
-<p>Another useful property of HRW is that it can solves the <strong>k-agreement
+<p>On side note, another useful property of HRW is that it can solves the <strong>k-agreement
 problem</strong>: Given a set of n possible values, all client must come to the
 conclusion of choosing a set k out of n value. The k-agreement problem is the
-generalized version of the <strong>Consensus Problem</strong>, where in the consensus case k = 1.</p>
-
-<p>So what’s the application of agreeing on k out n nodes ? Another requirement
-for prodution datastore is that your data has to be replicated on other
-server as well. HRW can accomodate for this feature: Simply pick the
-k largest weight from the list. Largest weight value is considered the “main”
-node, next k-1 nodes is the replication nodes.</p>
+generalized version of the Consensus Problem, where in the consensus case k = 1.
+I think this one is very applicable for replica setup: every Key inserted into our
+table will have a leader node, with k-1 other replica node. We also have a
+deterministic process of promoting replica node as the next leader: In case the
+leader goes down, replica with the 2nd highest weight is used as a query point
+for our key.</p>
 
 <h2 id="consistent-hashing">Consistent Hashing</h2>
 
 <p><a href="https://www.cs.princeton.edu/courses/archive/fall09/cos518/papers/chash.pdf">Krager et al</a>
-described a another algorithm to solve the problem of distributed hashing:
-Given a set of N keys and X nodes of M keys capacity, for each migration cycle ( node enter/exit )
-at most N/M keys will be moved away from it’s original position. In other
-words, the data moving around will be no greater than a machine’s worth of storage.</p>
+described a another algorithm to solve the problem of distributed hashing.</p>
 
-<p>Consistent Hashing also aims to have the following properties:</p>
+<p>The basic operation is this: We hash a key to produce a value on some unit
+interval range ( the paper use \([0.0, 1.0]\), but 64-bit hash function could map into
+\([0, 2^{63}-1]\) interval )</p>
+
+<p>The interval is circular ( using modulo arithmatic ) and can be visualized as a
+ring. Our <strong>nodes</strong> will be placed at various points on the ring according to their hash value</p>
+
+<p><img src="/images/toptal-consistent-hash-1.png" alt="Consistent Hash Ring, courtesy of Toptal" width="750" /></p>
+
+<p><em>Borrowed image from Toptal</em></p>
+
+<p>To find the destination node <code>node = Dest(key)</code> for a given key.</p>
 <ul>
-  <li><strong>Balance</strong> : Given a set of I items and B nodes, each of them will have approximately <code>1/|I|</code> items hashed to.</li>
-  <li><strong>Minimal disruption</strong>: During migration, only N/M entries are expected to be relocated.</li>
-  <li><strong>Monotonic</strong> : Given a set of V1 nodes, if some new x nodes are added,
-keys will only be shuffling from old nodes to new nodes, not between old nodes.</li>
-  <li><strong>Small Spread</strong>: An object can be hashed to multiple machine, the number of machines should be small.</li>
-  <li><strong>Small Load</strong>: For each machine, the number of object it stores also should be small.</li>
+  <li>First we obtain the hash value of our key <code>h = Hash(key)</code></li>
+  <li>Lookup the next node clockwise, with node hash value greater than key hash value.
+    <ul>
+      <li>In implementation, this is a binary search on the array of node’s hash value with \(O(logn)\)</li>
+    </ul>
+  </li>
 </ul>
 
-<!-- < TODO construction of consistent hashing> -->
-
 <p><strong>Weighted Balance</strong>: In practice, the distribution of the Node Hash
-<code>Hash()</code> is quite uneven at small N values.</p>
+<code>Hash()</code> is quite uneven at small N values. To mitigate this the hashing scheme
+split a physical node into multiple <strong>virtual nodes</strong>, each with it’s own <strong>Virtual ID</strong> and hash.</p>
 
-<!-- <TODO diagram of Hash(Node[i]) distribution on uniform interval> -->
+<p><img src="/images/toptal-consistent-hash-2.png" alt="Consistent Hash Ring, courtesy of Toptal" width="750" /></p>
 
-<p>To mitigate this the hashing scheme split a physical node into multiple
-<strong>virtual nodes</strong>, each with it’s own <strong>Virtual ID</strong> and hash.</p>
-
-<!-- <TODO diagram of Virtual Node distribution on uniform interval> -->
+<p><em>Borrowed image from Toptal</em></p>
 
 <p>Now the distribution of server get increasingly more even as N values is multiplied. 
 To account for the difference in workload of nodes (i.e. some nodes can store more data than others),
 the split ratio of physical - virtual node can be adjusted accordingly. Node with higher score
 get splited into more virtual nodes ( and get higher % of being selected ).</p>
 
-<h2 id="comparison">Comparison</h2>
+<p>The paper then goes on to show the following properties are achieved by the algorithm.</p>
 
-<p><strong>Recomputation</strong>: Notice that in both HRW and Consistent Hash, the entire set of key will have to
+<ul>
+  <li><strong>Balance</strong> : Given a set of I items and B nodes, each of them will have approximately <code>1/|I|</code> items hashed to.</li>
+  <li><strong>Monotonic</strong> : Given a set of V1 nodes, if some new x nodes are added,
+keys will only be shuffling from old nodes to new nodes, not between old nodes.
+    <ul>
+      <li>Equivalent to <strong>minimal disruption</strong></li>
+    </ul>
+  </li>
+</ul>
+
+<p>And also having additional properties:</p>
+<ul>
+  <li><strong>Small Load</strong>: Formally, the <em>load</em> of of a hash function is the maximum load of any given bucket in our cluster.
+    <ul>
+      <li>We can understand it as for each machine, the number of object it stores also should be small.</li>
+      <li>A good hashing scheme will do their best to minimize <strong>load factor</strong> in the clusters.</li>
+    </ul>
+  </li>
+  <li><strong>Small Spread</strong>: An object can be hashed to multiple possible nodes,
+  depending on the <em>view</em> of the client. Small spread kept this possibilities
+  small.
+    <ul>
+      <li>The concept of <strong>view</strong> is the number of available nodes from a client’s
+  perspective, sometimes due to network failure a client may not be able to
+  see every nodes in the cluster.</li>
+      <li>Small spread can be translate as: it does not matter if the clients can
+  only see half of the cluster. All clients will agree on some
+  small set of destination nodes, for any given key.</li>
+      <li>If spread is large, a key may have to be duplicated on multiple nodes to
+  ensure that every clients ( and their views ) can lookup the key without
+  cache miss.</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="comments">Comments</h2>
+
+<p><strong>Recomputation</strong>: In both HRW and Consistent Hash, the entire set of key will have to
 Notice that in both HRW and Consistent Hash, the entire set of key will have to
 be re-computed everytime the topology of our network changes. When a new node
 enter, each key will re-compute Score(Object, Node[i]) to determine
@@ -319,7 +485,7 @@ nodes without weight change will not be unecessary exchanging data. This hashing
 provice both <strong>stability</strong> ( no unecessary data shuffles ) and <strong>balance</strong>
 (data distributed evenly). The proof of this property provided in Jason Resch’s slide.</p>
 
-<h1 id="trivia">Trivia</h1>
+<h2 id="trivia">Trivia</h2>
 
 <ul>
   <li><strong><a href="https://stackoverflow.com/a/67578565">DOS mitigation</a></strong> : Since HRW /
