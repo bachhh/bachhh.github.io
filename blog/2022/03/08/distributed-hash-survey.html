@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title> Distributed Hash Table </title>
+  <meta name="viewport" content="width=device-width">
+
+  <!-- syntax highlighting CSS -->
+  <link rel="stylesheet" href="/bach_do/css/syntax.css">
+  <link rel="stylesheet" href="/bach_do/css/codeblock.scss">
+
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/bach_do/css/reset.css">
+  <link rel="stylesheet" href="/bach_do/css/main.css">
+  <link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+
+   <!--- MathJax -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+
+  <!-- Fonts -->
+  <link href='http://fonts.googleapis.com/css?family=Bitter:400,700,400italic|Open+Sans:400italic,600italic,400,600' rel='stylesheet' type='text/css'>
+</head>
+<body>
+  <header style="background-image: url(/bach_do/images/akira.jpg);">
+  <div class="container post-container">
+    <a href="/bach_do/" class="home_button"></a>
+    <div class="inner-container">
+      <h1>Distributed Hash Table</h1>
+      <ul class="meta">
+        <li>
+          <span>
+            Published
+          </span>
+          08 Mar 2022
+        </li>
+        <li>
+          <span>
+            Category
+          </span>
+          blog
+        </li>
+        <li>
+          <span>
+            Tags
+          </span>
+          
+        </li>
+
+      </ul>
+    </div>
+
+  </div>
+</header>
+
+<article>
+  <div class="container">
+    <h1 id="distributed-hash-table">Distributed Hash Table</h1>
+
+<p>The distributed Hash Table problem is pretty much what it sounds like: a hash table distributed throughout multiple machines in a network. The Hash Table answers this query for any given object:</p>
+
+<p>Given an object and n buckets/nodes/servers, on what bucket do I put this object into ?</p>
+
+<p>In a typical HashMap library or HashIndex in databases, the query is implemented with a very simple hash function and modulo ops: <code>bucket = hash(o) % n</code>, although caveats such as <a href="https://en.wikipedia.org/wiki/Linear_probing">linear probing</a>, <a href="https://en.wikipedia.org/wiki/Hash_table#Separate_chaining">chaining</a>, or <a href="https://en.wikipedia.org/wiki/Cuckoo_hashing">Cuckoo</a> applies when more than 1 object produce the same bucket.</p>
+
+<p>This approach works well in a non-orchestrator context, no single entity is
+responsible for choosing which server store an object. Assuming client A put
+write the Object in server 1, and later client B read it. B knows immediately and 
+without asking A, that ojbect O belongs to server 1, B connect and ask for it’s
+value directly.</p>
+
+<p>In Distributed Hash Table, however, complication arise when “node” can come
+offline / online offline at anytime, without warning.</p>
+
+<p>Assume we have 3 servers [0, 1, 2]</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Object-Hash</th>
+      <th>Dest (hash % mod)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>A-12</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>B-13</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>C-14</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>X-9</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Y-10</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>Z-11</td>
+      <td>2</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Now, administrator decide to add a new server 3, total n = 4,</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Object-Hash</th>
+      <th>Dest (hash % mod)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>A-12</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>B-13</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>C-14</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>X-9</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>Y-10</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>Z-11</td>
+      <td>3</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>We can se that object [Z,X] hash moved. This is particularly hazardous in a network environment: Server come on and
+off-line few times every minute. You don’t want to be moving 10M hash entries
+every time some random server A disconnected from the network.</p>
+
+<pre><code>A distributed system is one in which the failure of a computer you did not even
+know existed can render your own computer unusable.
+- Leslie Lamport
+</code></pre>
+
+<p>In an ideal Distributed Hash Table, when there’s a change to our cluster’s
+members, our hash entries should remain ( some what ) unchanged. 
+A server leaving the system should not cause redistribution of other server’s
+data, only it’s own. A new server join should only “steal” as many data from others as
+it’s full capacity. The problem of DHT calls for a different family of hashing scheme,
+the Stable Hashing scheme.</p>
+
+<h2 id="highest-random-weight">Highest Random Weight</h2>
+
+<p><a href="http://www.eecs.umich.edu/techreports/cse/96/CSE-TR-316-96.pdf">Thaler &amp; Ravishankar Section 4.1</a>
+ in 1996 described the Highest Random Weight Hashing scheme. Although writtern as a
+request-server mapping, the idea can be applied for object storage as well.</p>
+
+<p>The idea is that, instead of producing a <strong>Hash</strong> value for the object then
+choose the node based on that Hash value, the hash function now output a
+<strong>Weight Score</strong> for each pair of <strong>(Object, Node)</strong>. Destination is chosen as
+the value with highest weight.</p>
+
+\[F() Object \rightarrow Node[i] = 
+   \\
+   Weight(Object, Node[i]) &gt; Weight(Object, Node[j]) 
+   for all i, j in the set of Node [0, n]\]
+
+<p>HRW has a very useful property of <strong>minimal disruption</strong></p>
+
+<p>When node i exit, all objected stored on that node will be evenly
+redistributed. Since Weight(Object, Node[i]) is no longer the maximum value
+in the set, we pick the second highest weight from all the remaining nodes.</p>
+
+<p>When node k enter, all objects are re-hashed with new node’s value 
+Weight(Object, Node[i]) ( the cost of computing hash key is minimal compare to
+the cost of moving data ), only the object which satisfies the condition:</p>
+
+\[Weight(Object, Node[i]) &gt; Weight(Object, Node[j]) 
+    \\ 
+    \text{for all i, j in [0, n]}\]
+
+<p>Get redistributed, all other object stay intact.</p>
+
+<p>Another useful property of HRW is that it can solves the <strong>k-agreement
+problem</strong>: Given a set of n possible values, all client must come to the
+conclusion of choosing a set k out of n value. The k-agreement problem is the
+generalized version of the <strong>Consensus Problem</strong>, where in the consensus case k = 1.</p>
+
+<p>So what’s the application of agreeing on k out n nodes ? Another requirement
+for prodution datastore is that your data has to be replicated on other
+server as well. HRW can accomodate for this feature: Simply pick the
+k largest weight from the list. Largest weight value is considered the “main”
+node, next k-1 nodes is the replication nodes.</p>
+
+<h2 id="consistent-hashing">Consistent Hashing</h2>
+
+<p><a href="https://www.cs.princeton.edu/courses/archive/fall09/cos518/papers/chash.pdf">Krager et al</a>
+described a another algorithm to solve the problem of distributed hashing:
+Given a set of N keys and X nodes of M keys capacity, for each migration cycle ( node enter/exit )
+at most N/M keys will be moved away from it’s original position. In other
+words, the data moving around will be no greater than a machine’s worth of storage.</p>
+
+<p>Consistent Hashing also aims to have the following properties:</p>
+<ul>
+  <li><strong>Balance</strong> : Given a set of I items and B nodes, each of them will have approximately <code>1/|I|</code> items hashed to.</li>
+  <li><strong>Minimal disruption</strong>: During migration, only N/M entries are expected to be relocated.</li>
+  <li><strong>Monotonic</strong> : Given a set of V1 nodes, if some new x nodes are added,
+keys will only be shuffling from old nodes to new nodes, not between old nodes.</li>
+  <li><strong>Small Spread</strong>: An object can be hashed to multiple machine, the number of machines should be small.</li>
+  <li><strong>Small Load</strong>: For each machine, the number of object it stores also should be small.</li>
+</ul>
+
+<!-- < TODO construction of consistent hashing> -->
+
+<p><strong>Weighted Balance</strong>: In practice, the distribution of the Node Hash
+<code>Hash()</code> is quite uneven at small N values.</p>
+
+<!-- <TODO diagram of Hash(Node[i]) distribution on uniform interval> -->
+
+<p>To mitigate this the hashing scheme split a physical node into multiple
+<strong>virtual nodes</strong>, each with it’s own <strong>Virtual ID</strong> and hash.</p>
+
+<!-- <TODO diagram of Virtual Node distribution on uniform interval> -->
+
+<p>Now the distribution of server get increasingly more even as N values is multiplied. 
+To account for the difference in workload of nodes (i.e. some nodes can store more data than others),
+the split ratio of physical - virtual node can be adjusted accordingly. Node with higher score
+get splited into more virtual nodes ( and get higher % of being selected ).</p>
+
+<h2 id="comparison">Comparison</h2>
+
+<p><strong>Recomputation</strong>: Notice that in both HRW and Consistent Hash, the entire set of key will have to
+Notice that in both HRW and Consistent Hash, the entire set of key will have to
+be re-computed everytime the topology of our network changes. When a new node
+enter, each key will re-compute Score(Object, Node[i]) to determine
+if it should be moved or not. And in Consistent Hash, the interval <code>| Hash(Object) - Hash(Node[i])|</code>
+will be recalculated to determine the closest node. The assumption here is that re-computing object key
+cost is minimal, compare to the cost of moving key-value data during migration.</p>
+
+<p>In hindsight, Rendezvous Hash is a generalization of Consistent Hashing: the Score function
+Score(Object, Node[i]) can defined as such <code>| Hash(Object) - Hash(Node[i])|</code>.
+Choosing the k-agreemment node in Consistent Hash is taking the k-minimum of all interval value.</p>
+
+<p>The Computational cost is O(N) with N as the number of servers, under the usual
+applied usecase of DHT ( as a distributed k-v storage ), O(N) should not be a
+concerns. When balancing storage between 10-20 servers, O(N) is good enough.</p>
+
+<p>One small difference though, is that HRW can somewhat be performed as a
+<strong>stateless</strong> protocol, while Consistent Hash requires a shared state between
+requester. The Consistent Hash requires a table of Node-Hash(Node) and updated
+accordingly each time a migration happens. HRW avoid keeping this shared state,
+but pay in other penalty: computing all pair hash Hash(object, Server[i]) each
+time they query, but again, it’s insignificant on few dozens of nodes.</p>
+
+<h2 id="weighted-variants">Weighted Variants</h2>
+
+<p><a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.414.9353&amp;rep=rep1&amp;type=pdf">Schindelhauer &amp; Schomaker</a> 
+specifiy special methods for adapting Rendezvous Hash in weighted node context.</p>
+
+<p>For Consistent Hash, the simple approach of multiplying physical to virtual node by some weight
+factor. Then your hash function will get <code>xWeight</code> more probability of getting
+a higher score than lower weight nodes.</p>
+
+<p>This, however, get the downside of increasing hash computation linearly, especially
+as the most common multiple of all weights approach prime number.</p>
+
+<h2 id="carp">CARP</h2>
+
+<p>Unlike Consistent Hash, for weighted-WRH (We can call it Weighted Rendezvous
+Hash, although the acronym being the same is quite confusing), you don’t need
+to commit yourself to doing multiplication arithematic. In CARP the score are
+multiplied by a weight factor for a final score. The weight factor of scores
+are relatively scaled so that their total sum = 1.0.</p>
+
+<p>However note that this messes with the <strong>minimal disruption</strong> and <strong>monotonic</strong>
+requirement: when node enter / exit under a migration cycle. Since weight
+factor are relatively scaled, all score has to be recomputed with new weight
+factor, and this causes more than N/M entries to be moving between nodes.</p>
+
+<h2 id="weighted-stable--balanced-rendezvous-hash">Weighted Stable &amp; Balanced Rendezvous Hash</h2>
+
+<p><a href="https://www.snia.org/sites/default/files/SDC15_presentations/dist_sys/Jason_Resch_New_Consistent_Hashings_Rev.pdf">Jason Resch</a>
+points out another interesting method of weighted rendezvous hashing that compensated for 
+the above drawback.</p>
+
+<p>Instead of multiply by a relative scale factor, the score function is calculated by</p>
+
+\[\text{let  y = (item|node[i])}
+\\
+Score(y) = \frac{w_i}{-\ln(hash(y))}
+\\
+\text{where } w_i \text{ is the weight of node[i]}
+\\
+\text{and } hash(i) = \text{the ideal hash function} (item|node[i]) \rightarrow [0, 1]\]
+
+<p>Chosen node is node with highest score.</p>
+
+<p>The neat thing about this function is that it provide the <strong>balance</strong> property, 
+e.g.: the probability of data going to node[i] is proportion to the node’s weight</p>
+
+\[Prob(\text{item goes into node i }) = \frac{w_i}{\sum_{k}^{n}w_k}\]
+
+<p>While simutanuously ensure scores of unchanged node stay the same, meaning
+nodes without weight change will not be unecessary exchanging data. This hashing scheme 
+provice both <strong>stability</strong> ( no unecessary data shuffles ) and <strong>balance</strong>
+(data distributed evenly). The proof of this property provided in Jason Resch’s slide.</p>
+
+<h1 id="trivia">Trivia</h1>
+
+<ul>
+  <li><strong><a href="https://stackoverflow.com/a/67578565">DOS mitigation</a></strong> : Since HRW /
+Consistent Hash map same request to the same server. In case of DOS attack,
+round-robin spreading the load on all servers can brought down the whole
+cluster. But for consistent hash, where the same request map to same server,
+only a section of the server is down.</li>
+</ul>
+
+<p>This seems true at first, but I highly doubt DOS attacker didn’t already spoof
+their packets to circumvent firewalls. When packet are spoofed, distribution of
+packet on clusters become uniform, and net effect is no different from
+round-robin.</p>
+
+<ul>
+  <li><strong>Migration</strong> A cool tricks you can do with Weighted Consistent/Rendezvous
+Hash is to enable continuous migration during operation. For example, to retire
+an old node from the cluster, you can gradually lower the weight factor of said
+node until it reaches zero. By contrast, if unplugging the node outright, a
+huge spike of data transfer in cluster network is ensued.</li>
+</ul>
+
+<p>This sounds like a good practice and I feel like it’s very applicable in
+software operations.</p>
+
+<h1 id="footnotes">Footnotes</h1>
+
+<p>All of these is under the assumption that we already know the set of all
+servers. When we don’t, the problem is caled <a href="">service discovery</a></p>
+
+  </div>
+</article>
+
+</body>
+</html>

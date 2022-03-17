@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title> Pass </title>
+  <meta name="viewport" content="width=device-width">
+
+  <!-- syntax highlighting CSS -->
+  <link rel="stylesheet" href="/bach_do/css/syntax.css">
+  <link rel="stylesheet" href="/bach_do/css/codeblock.scss">
+
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/bach_do/css/reset.css">
+  <link rel="stylesheet" href="/bach_do/css/main.css">
+  <link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+
+   <!--- MathJax -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+
+  <!-- Fonts -->
+  <link href='http://fonts.googleapis.com/css?family=Bitter:400,700,400italic|Open+Sans:400italic,600italic,400,600' rel='stylesheet' type='text/css'>
+</head>
+<body>
+  <header style="background-image: url(/bach_do);">
+  <div class="container post-container">
+    <a href="/bach_do/" class="home_button"></a>
+    <div class="inner-container">
+      <h1>Pass</h1>
+      <ul class="meta">
+        <li>
+          <span>
+            Published
+          </span>
+          30 May 2020
+        </li>
+        <li>
+          <span>
+            Category
+          </span>
+          jekyll
+        </li>
+        <li>
+          <span>
+            Tags
+          </span>
+          
+        </li>
+
+      </ul>
+    </div>
+
+  </div>
+</header>
+
+<article>
+  <div class="container">
+    <h1 id="password-">Password ?</h1>
+
+<p>It finally happened, some folks in my company leaked their mail password somewhere on the internet. Their account got logged in from a new device which prompted the SecOps guy to do a full password reset of everyone in that department. 2FA is now mandatory ( it was previously, but no one actually check if everyone has it enabled ) and require everyone to use a strong 12-characters password.</p>
+
+<p>My password(s) has definitely been leaked on the internet. I’ve changed like 8 password over the course of 6 year, all of them being very similar to each other though. So now I’m at a point where: A. I can’t really generate more memorable password that is not “change-few-letters-from-old-passwords-until-the-site-accept-it”, and B. my muscle memory is not large enough to hold 4 of 20-characters long password. “Maybe it’s time to use an actual password managers” I thought so.</p>
+
+<p>I’ve always been taken back by the idea of using password managers, mostly from the stuffs where they sync your password to “the cloud”. How the hell can I be sure that my passwords are stored correctly ? What happens if the server goes down ? What the hell is running in their code ?</p>
+
+<p>The code being open source is not enough of clarity for me,</p>
+
+<h1 id="pass">Pass</h1>
+
+<p>I just had everything pretty much mapped out in my mind while searching for Pass. The most simplistic password managers would just encrypt passwords and metadata inside a file. You can pipe your password directly to system’s clipboard, no need for fancy browser extensions that would actually expose you to more vulnerability ( as a general rule complexity creates insecurity ). Pass just check every tickbox for me while being a very simple implementation.</p>
+
+<p>Password Database ? It’s directories. Encryption ? Trusty GnuPG. Syncing ? Pass uses Git, and I didn’t even know I needed that, that also means you can host your own cloud storage with a simple Git’s Remote setup.</p>
+
+<h1 id="introducing-gpg-aka-gnu-privacyguard">Introducing GPG a.k.a GNU PrivacyGuard</h1>
+
+<p>The backbone of Pass’s cryptography. Pass relies on GPG ( GnuPG ) for encryption, so I will explain a bit about how you can generate an encryption key. And most importantly, how to manage your keyrings ( a collection of crypto keys ).</p>
+
+<h2 id="1-generating-keys">1. Generating Key(s)</h2>
+
+<p>When running GPG with the <code>--expert</code> option, you are greeted with a list of options to choose your prefered cryptosystem. <a href="https://en.wikipedia.org/wiki/RSA_(cryptosystem)">RSA</a>, <a href="https://en.wikipedia.org/wiki/Digital_Signature_Algorithm">DSA</a>, and <a href="https://en.wikipedia.org/wiki/Elliptic-curve_cryptography">ECC</a> all refers to 3 popular Public-Keys cryptosystem.</p>
+
+<pre><code>&gt;gpg --expert --full-gen-key                                                                                                                                                             0
+gpg (GnuPG) 2.2.23; Copyright (C) 2020 Free Software Foundation, Inc.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+
+Please select what kind of key you want:
+   (1) RSA and RSA (default)
+   (2) DSA and Elgamal
+   (3) DSA (sign only)
+   (4) RSA (sign only)
+   (7) DSA (set your own capabilities)
+   (8) RSA (set your own capabilities)
+   (9) ECC and ECC
+  (10) ECC (sign only)
+  (11) ECC (set your own capabilities)
+  (13) Existing key
+  (14) Existing key from card
+Your selection?
+</code></pre>
+
+<p>Now, GPG recommends you to generate 2 set of key pairs, the <strong>Signing Key</strong> and the <strong>Encryption Key</strong> ( or <strong>Encryption Sub-key</strong> ).</p>
+
+<h3 id="why-2-set-of-keys-">Why 2 set of keys ?</h3>
+
+<p>When doing cryptography on the internet, there are 2 things you will be doing:</p>
+
+<ul>
+  <li>Signing over some messages so people know that this is from you, and you only.</li>
+  <li>Encrypting some messages so no one but you &amp; recipent can read the messages.</li>
+</ul>
+
+<p>The signature bit is generally considered to be much more important than the encryption bit, because it goes hand-in-hand with your <strong>identity</strong> on the internet. If someone have access to your private key, they can pose as you on the internet, they can sign any kind of document and others will believe that it’s you who has signed it. Announcing to other people that your signature has been hjacked is a very painful process, and you will have to build your reputation again from the ground up when switching to a new signing key ( that is if you don’t want to expose your real-world ID documents ).</p>
+
+<p>You will want to keep your signing key very secure, you don’t want to store this key on a machine, but on a hardware / key device safe in somewhere safe. The less you use this key, the less likely that it is going to be cracked. But this come at a cost of usability: it’s very much of a hassle to use.
+                                                                                                                                                        l
+So the solution is you can use a separate key for other tasks for more convenience. You can generate a secondary <strong>sub-key</strong> for stuffs that you just want to get it done quick. If it happens that a hacker got hold of your key, you can invalidate and replace it quite quickly with a new key. Your sub-key is just as secure as your primary key, they are in fact look just like any other crypto keys. The only difference is just how you manage them in daily operation.</p>
+
+<p>The second point on this, is that using the same key for both signing and encryption is insecure. For public key cryptosystems, signing  and decrypting a message are essentially <strong>identical operation</strong>. So if someone took a an message encrypted using your public key, and ask you to sign it with the private key, you are giving them the decrypted message. Obviously this is very bad so it’s always recommended to generate a new key for encryption, separated from your signing key.</p>
+
+<h3 id="why-public-key-cryptography">Why Public Key Cryptography</h3>
+
+<p>Most popular Password Manager use AES256 for encryption.  On theory it is a much more secure encryption algorithm than public-key cryptography, but IMO on practical terms for normal users both are unbreakable, provides that you use a large enough key like 4096 bits RSA. Unless you are holding data valuable enough that the CIA will use every resources they have to break into your computer.</p>
+
+<p>In this example, I will choose both my signing key and encryption key as RSA-4098</p>
+<pre><code>bach@test.io:~$ gpg --expert --full-gen-key
+gpg (GnuPG) 2.2.19; Copyright (C) 2019 Free Software Foundation, Inc.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+
+Please select what kind of key you want:
+   (1) RSA and RSA (default)
+   (2) DSA and Elgamal
+   (3) DSA (sign only)
+   (4) RSA (sign only)
+   (7) DSA (set your own capabilities)
+   (8) RSA (set your own capabilities)
+   (9) ECC and ECC
+  (10) ECC (sign only)
+  (11) ECC (set your own capabilities)
+  (13) Existing key
+  (14) Existing key from card
+Your selection? 1
+
+RSA keys may be between 1024 and 4096 bits long.
+What keysize do you want? (3072) 4096
+Requested keysize is 4096 bits
+RSA keys may be between 1024 and 4096 bits long.
+What keysize do you want for the subkey? (3072) 4096
+Requested keysize is 4096 bits
+Please specify how long the key should be valid.
+         0 = key does not expire
+      &lt;n&gt;  = key expires in n days
+      &lt;n&gt;w = key expires in n weeks
+      &lt;n&gt;m = key expires in n months
+      &lt;n&gt;y = key expires in n years
+Key is valid for? (0) 0
+Key does not expire at all
+Is this correct? (y/N) y
+</code></pre>
+
+<p>Type in your credentials and user</p>
+
+<pre><code>GnuPG needs to construct a user ID to identify your key.
+
+Real name: bach
+Name must be at least 5 characters long
+</code></pre>
+
+<p>I’m disapointed, if you ever have to deal with real names <a href="https://www.kalzumeus.com/2010/06/17/falsehoods-programmers-believe-about-names/">Falsehoods Programmers Believe About Names</a>.</p>
+
+<p>A prompt will appear for you to type in your passphrase, this is the “master password” that you’re going to use to unlock all the other password. My method of choice is to use <code>openssl rand -hex 16</code> to generate a random password for this. My muscle memory can afford to remember password up to maybe 50 characters.</p>
+
+<pre><code>$gpg --list-secret-keys --keyid-format LONG
+gpg: checking the trustdb
+gpg: marginals needed: 3  completes needed: 1  trust model: pgp
+gpg: depth: 0  valid:   1  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 1u
+/home/bachdo/.gnupg/pubring.kbx
+sec   rsa4096/66D5C32402AC83E4 2021-06-07 [SC]
+      8CB15A37988805546FF6730F66D5C32402AC83E4
+uid                 [ultimate] bachhh@test.io (foo) &lt;bachhh@test.io&gt;
+ssb   rsa4096/C54BEB3EF77FCFD5 2021-06-07 [E]
+
+</code></pre>
+
+<p>Now you can see that I have 2 keys created, <code>66D5C32402AC83E4</code> is marked <code>[SC]</code> which means it’s for <strong>sign and certificate</strong>, and <code>C54BEB3EF77FCFD5</code> makred as <code>[E]</code> which means it’s for <strong>encryption</strong>.</p>
+
+<h2 id="pass-init">Pass init</h2>
+
+<p>Initiating your password database, which create a new directory, with GPG’s key ID as an argument.</p>
+
+<pre><code>~$ pass init --path=$HOME/.password-store/ C54BEB3EF77FCFD5
+mkdir: created directory '/home/bachdo/.password-store/'
+Password store initialized for C54BEB3EF77FCFD5
+</code></pre>
+
+<h2 id="insert-and-generate-password">Insert and Generate password</h2>
+
+<p>You can import new password into the database</p>
+
+<pre><code>bachdo@server.io:~$ pass insert test/test.com
+mkdir: created directory '/home/bachdo/.password-store/test'
+Enter password for test/test.com:
+
+</code></pre>
+
+<p>It is recommended to generate a random new password for each service you use, which is guaranteed to be untraceable.</p>
+
+<pre><code>bachdo@server.io:~$ pass generate personal/facebook.com/bach@server.io
+mkdir: created directory '/home/bachdo/.password-store/personal'
+mkdir: created directory '/home/bachdo/.password-store/personal/facebook.com'
+The generated password for personal/facebook.com/bach@server.io is:
+P8!s-W)%/k]l?%4}w4($25e&gt;g
+bachdo@server.io:~$ pass list
+Password Store
+└── personal
+    └── facebook.com
+        └── bach@server.io
+bachdo@server.io:~$
+</code></pre>
+
+<p>I would keep the database at most 3-levels directory, any more than that would probably be really hard to use.</p>
+
+<h2 id="show">Show</h2>
+
+<pre><code>bachdo@server.io:~$ pass show personal/facebook.com/bach@server.io
+P8!s-W)%/k]l?%4}w4($25e&gt;g
+</code></pre>
+
+<p>Pass has an amazing -c option which will copy directly to your clipboard and not showing the password on the screen, the clipboard will then be cleared after 45 secs to avoid accidental leak</p>
+<pre><code>$ pass show personal/facebook.com/bach@server.io -c
+</code></pre>
+
+<h2 id="sync-with-other-devices">Sync with other devices</h2>
+
+<p>There are numerous compatible clients ( thansks to Pass’s simple implementation ) that you can use across platforms / devices. I use https://mssun.github.io/passforios/ for IOS device and https://qtpass.org for Windows.</p>
+
+<p>There is a very neat library to convert GPG key to QR images ( it’s even a GIF ) here: https://github.com/yishilin14/asc-key-to-qr-code-gif. Use it to transfer your encryption key instead of transfering via USB Drive or Cloud.</p>
+
+<p>After that, sync with your Git remote and do a pull</p>
+
+<pre><code>$ pass git init C54BEB3EF77FCFD5
+$ pass git add remote origin git@remote.io:repo/passwordstore.git
+$ pass git pull origin
+</code></pre>
+
+  </div>
+</article>
+
+</body>
+</html>

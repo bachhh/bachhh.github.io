@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title> Calculate balance factor when rotating AVL tree node </title>
+  <meta name="viewport" content="width=device-width">
+
+  <!-- syntax highlighting CSS -->
+  <link rel="stylesheet" href="/bach_do/css/syntax.css">
+  <link rel="stylesheet" href="/bach_do/css/codeblock.scss">
+
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/bach_do/css/reset.css">
+  <link rel="stylesheet" href="/bach_do/css/main.css">
+  <link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+
+   <!--- MathJax -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+
+  <!-- Fonts -->
+  <link href='http://fonts.googleapis.com/css?family=Bitter:400,700,400italic|Open+Sans:400italic,600italic,400,600' rel='stylesheet' type='text/css'>
+</head>
+<body>
+  <header style="background-image: url(/bach_do/images/akira.jpg);">
+  <div class="container post-container">
+    <a href="/bach_do/" class="home_button"></a>
+    <div class="inner-container">
+      <h1>Calculate balance factor when rotating AVL tree node</h1>
+      <ul class="meta">
+        <li>
+          <span>
+            Published
+          </span>
+          08 Oct 2017
+        </li>
+        <li>
+          <span>
+            Category
+          </span>
+          blog
+        </li>
+        <li>
+          <span>
+            Tags
+          </span>
+          
+        </li>
+
+      </ul>
+    </div>
+
+  </div>
+</header>
+
+<article>
+  <div class="container">
+    <p>In AVL tree, we keep track of the tree’s balance using a balance factor number, updated with every insertion and deletion. This is an attempt to factorize the recalculation process inside during rotation, instead of insertion / deletion. Doing so would tidy up the code significantly.</p>
+
+<h2 id="avl-tree">AVL tree</h2>
+
+<p>AVL tree is the first type of self-balancing binary search tree invented, if you are missing out on BST you can read more in <a href="https://en.wikipedia.org/wiki/Self-balancing_binary_search_tree" title="Self-balancing BST"> here </a>.</p>
+
+<p>Still, AVL tree definition are simple enough: for any node, the height of the subtree of the left child and the height of the subtree of the right child does not differ by more than 1. And height is defined as the longest path from the root to leaf node.</p>
+
+<p>The height of any AVL tree and worst case complexity of searches, is bounded by \(O(\log n)\). At time of insertions and deletions, violations to the property of AVL tree can happen, both AVL tree and red-black tree adopt a procedure called <strong>rotation</strong> to restore the balance.</p>
+
+<h2 id="balance-factor">Balance factor</h2>
+
+<p>To enforce the tree property, at each node we store a balance factor <code>int bfact</code> over the range.</p>
+<center> $$ \{ -2, -1, 0, 1, 2 \} $$</center>
+
+<p>Which denote the height of the right minus the height of the left subtree of that node</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">struct</span> <span class="n">avlTree</span><span class="p">{</span>
+  <span class="n">avlNode</span><span class="o">*</span> <span class="n">root</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">struct</span> <span class="n">avlNode</span> <span class="p">{</span>
+  <span class="k">struct</span> <span class="n">avlNode</span><span class="o">*</span> <span class="n">parent</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+  <span class="k">struct</span> <span class="n">avlNode</span><span class="o">*</span> <span class="n">left</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+  <span class="k">struct</span> <span class="n">avlNode</span><span class="o">*</span> <span class="n">right</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">key</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">bfact</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">};</span></code></pre></figure>
+
+<h2 id="rotation">Rotation</h2>
+
+<p>After insert any node, the balance factor of the new node’s parent can either decrease or increase, the balance factor is update throughout the tree up until the root.
+When a node have a balance factor of 2 or -2, rotations can help rebalance the tree. You can get a much more detailed explaination <a href="https://www.tutorialspoint.com/data_structures_algorithms/avl_tree_algorithm.htm" title="AVL tree procedures">here</a></p>
+
+<p>What we have here is the general case of left rotation, keep in mind that A, B and G denote a subtree of any heigh ( including 0 in which case they will be NULL). While X and Y are a node</p>
+
+<p><img src="/bach_do/assets/avl.jpg" alt="Before" /></p>
+
+<p>After a left rotation, the balance factor changed for both X and Y, and we wish to carry out update on these value, without the overhead of recalculating the height of any subtree A, B or G ( since only the balance factor is stored inside a node, calculating the height of subtree require depth traversal)</p>
+
+<p><img src="/bach_do/assets/avlleft.jpg" alt="After" /></p>
+
+<p>We use the below notation for our calculation</p>
+
+\[B(n) : \text{Balance factor of node n before rotation}\]
+
+\[b(n) : \text{Balance factor of node n after rotation}\]
+
+\[H(n) : \text{Height of subtree at node n, before rotation}\]
+
+\[h(n) : \text{Height of subtree at node n, after rotation}\]
+
+\[\text{ Note that for nodes A, B, C the height of their subtree and their balance factor does not change }\]
+
+<p><strong>First we calculate balance factor of X after rotation:</strong></p>
+
+\[b(X) = H(B) - H(A)\]
+
+<p>We can calculate H(B) based off of H(Y), consider that the height of Y is depedent on the height of the higher children.</p>
+
+\[H(Y) =
+\begin{cases}
+	H(B) + 1, &amp; \text{if } B(Y) \leqslant 0\\
+	H(G) + 1, &amp; \text{if } B(Y) &gt; 0
+\end{cases}
+\\
+
+\Longleftrightarrow
+\begin{cases}
+	H(B) = H(Y) - 1, &amp; \text{if } B(Y) \leqslant 0\\
+	H(Y) = H(B) + B(Y) + 1, &amp; \text{if } B(Y) &gt; 0
+\end{cases}
+\\
+
+\Longleftrightarrow H(B) =
+\begin{cases}
+	H(Y) - 1, &amp; \text{if } B(Y) \leqslant 0 \\
+	H(Y) - B(Y) - 1, &amp; \text{if } B(Y) &gt; 0
+\end{cases}
+\\
+
+\Longleftrightarrow H(B) - H(A) =
+\begin{cases}
+	H(Y) - H(A) - 1, &amp; \text{if } B(Y) \leqslant 0 \\
+	H(Y) - H(A) - B(Y) - 1, &amp; \text{if } B(Y) &gt; 0
+\end{cases}\]
+
+<p>Finally, substitute the equation of the initial balance factor for X: \(B(X) = H(Y) - H(A)\)</p>
+
+\[b(X) =
+\begin{cases}
+	B(X) - 1,				&amp; \text{if } \quad B(Y) \leqslant 0 \\
+	B(X) - B(Y) - 1,	&amp; \text{if } \quad B(Y) &gt; 0
+\end{cases}\]
+
+<p><strong>Now consider the balance factor of Y after rotation</strong></p>
+
+\[b(Y) = H(G) - H(X) =
+\begin{cases}
+ 	H(G) - ( H(B) + 1 ), &amp; \text{if } \quad b(X) \geqslant 0 \\
+ 	H(G) - ( H(A) + 1 ), &amp; \text{if } \quad b(X) &lt; 0
+\end{cases}\]
+
+<p>If you immediately notice it, then \(H(G) - H(B) = B(Y)\), then we have our easy case:</p>
+
+\[b(Y) = B(Y) - 1 \Longleftrightarrow b(X) \geqslant 0\]
+
+<p>You could think of this as the subtree at B added 1 extra node X, so the balance of Y shift left by 1</p>
+
+<p>For the case \(b(Y) = H(G) - H(A) - 1\), consider the state of the tree before rotation (note that the height of A, B, C never changed)</p>
+
+\[H(G) = B(Y) + H(B) \text{(regardless of the value of B(Y))} \\
+\therefore b(Y) = H(G) - H(A) - 1 = B(Y) + H(B) - H(A) - 1 = B(Y) + (H(B) - H(A)) - 1 = B(Y) + b(X) - 1\]
+
+<p>To sum it up:</p>
+
+\[b(Y) =
+\begin{cases}
+	B(Y) - 1,&amp; \text{if } \quad b(X) \geqslant 0 \\
+	B(Y) + b(X) - 1,&amp; \text{if } \quad b(x) &lt; 0
+\end{cases}\]
+
+<p>The right rotation is pretty much the same, but with a few signs swapped around since they are mirrored.</p>
+
+<h2 id="code">Code</h2>
+<p>Below is the C++ implementations of left and right rotation using pointers, balance factor of X and Y are updated before pointers are moved around.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">rotateLeft</span><span class="p">(</span><span class="n">avlTree</span><span class="o">*</span> <span class="n">tree</span><span class="p">,</span> <span class="n">avlNode</span><span class="o">*</span> <span class="n">x</span><span class="p">){</span>
+  <span class="n">avlNode</span><span class="o">*</span> <span class="n">y</span> <span class="o">=</span> <span class="n">x</span><span class="o">-&gt;</span><span class="n">right</span><span class="p">;</span>
+  <span class="n">avlNode</span><span class="o">*</span> <span class="n">p</span> <span class="o">=</span> <span class="n">x</span><span class="o">-&gt;</span><span class="n">parent</span><span class="p">;</span>
+  <span class="k">if</span><span class="p">(</span> <span class="n">y</span><span class="o">!=</span> <span class="nb">NULL</span><span class="p">){</span>
+    <span class="c1">// Only the balance factor of X and Y is affected</span>
+    <span class="kt">int</span> <span class="n">old_x_bfact</span> <span class="o">=</span> <span class="n">x</span><span class="o">-&gt;</span><span class="n">bfact</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">old_y_bfact</span> <span class="o">=</span> <span class="n">y</span><span class="o">-&gt;</span><span class="n">bfact</span><span class="p">;</span>
+    <span class="c1">//Calculate X bfact</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">old_y_bfact</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">){</span>
+      <span class="n">x</span><span class="o">-&gt;</span><span class="n">bfact</span> <span class="o">=</span> <span class="n">old_x_bfact</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">old_y_bfact</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">){</span>
+      <span class="n">x</span><span class="o">-&gt;</span><span class="n">bfact</span> <span class="o">=</span> <span class="n">old_x_bfact</span> <span class="o">-</span> <span class="n">old_y_bfact</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c1">//Calculate y bfact</span>
+    <span class="k">if</span><span class="p">(</span> <span class="n">x</span><span class="o">-&gt;</span><span class="n">bfact</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">){</span>
+      <span class="n">y</span><span class="o">-&gt;</span><span class="n">bfact</span> <span class="o">=</span> <span class="n">old_y_bfact</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+      <span class="n">y</span><span class="o">-&gt;</span><span class="n">bfact</span> <span class="o">=</span> <span class="n">old_y_bfact</span> <span class="o">+</span> <span class="n">x</span><span class="o">-&gt;</span><span class="n">bfact</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="n">x</span><span class="o">-&gt;</span><span class="n">right</span> <span class="o">=</span> <span class="n">y</span><span class="o">-&gt;</span><span class="n">left</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">y</span><span class="o">-&gt;</span><span class="n">left</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">){</span>
+      <span class="n">y</span><span class="o">-&gt;</span><span class="n">left</span><span class="o">-&gt;</span><span class="n">parent</span> <span class="o">=</span> <span class="n">x</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">y</span><span class="o">-&gt;</span><span class="n">parent</span> <span class="o">=</span> <span class="n">p</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">p</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">){</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="n">p</span><span class="o">-&gt;</span><span class="n">left</span> <span class="p">){</span>
+        <span class="n">p</span><span class="o">-&gt;</span><span class="n">left</span> <span class="o">=</span> <span class="n">y</span><span class="p">;</span>
+      <span class="p">}</span>
+      <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="n">p</span><span class="o">-&gt;</span><span class="n">right</span> <span class="p">){</span>
+        <span class="n">p</span><span class="o">-&gt;</span><span class="n">right</span> <span class="o">=</span> <span class="n">y</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">p</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">){</span>
+      <span class="n">tree</span><span class="o">-&gt;</span><span class="n">root</span> <span class="o">=</span> <span class="n">y</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">y</span><span class="o">-&gt;</span><span class="n">left</span> <span class="o">=</span> <span class="n">x</span><span class="p">;</span>
+    <span class="n">x</span><span class="o">-&gt;</span><span class="n">parent</span> <span class="o">=</span> <span class="n">y</span><span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">rotateRight</span><span class="p">(</span><span class="n">avlTree</span><span class="o">*</span> <span class="n">tree</span><span class="p">,</span> <span class="n">avlNode</span><span class="o">*</span> <span class="n">y</span><span class="p">){</span>
+  <span class="n">avlNode</span><span class="o">*</span> <span class="n">x</span> <span class="o">=</span> <span class="n">y</span><span class="o">-&gt;</span><span class="n">left</span><span class="p">;</span>
+  <span class="n">avlNode</span><span class="o">*</span> <span class="n">p</span> <span class="o">=</span> <span class="n">y</span><span class="o">-&gt;</span><span class="n">parent</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">x</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">){</span>
+    <span class="kt">int</span> <span class="n">old_x_bfact</span> <span class="o">=</span> <span class="n">x</span><span class="o">-&gt;</span><span class="n">bfact</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">old_y_bfact</span> <span class="o">=</span> <span class="n">y</span><span class="o">-&gt;</span><span class="n">bfact</span><span class="p">;</span>
+    <span class="c1">// Calcuating new Y bfact</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">old_x_bfact</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">){</span>
+      <span class="n">y</span><span class="o">-&gt;</span><span class="n">bfact</span> <span class="o">=</span> <span class="n">old_y_bfact</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+      <span class="n">y</span><span class="o">-&gt;</span><span class="n">bfact</span> <span class="o">=</span> <span class="n">old_y_bfact</span> <span class="o">+</span> <span class="n">old_x_bfact</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="c1">// Calcuating new X bfact</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">y</span><span class="o">-&gt;</span><span class="n">bfact</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">){</span>
+      <span class="n">x</span><span class="o">-&gt;</span><span class="n">bfact</span> <span class="o">=</span> <span class="n">old_x_bfact</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span><span class="p">{</span>
+      <span class="n">x</span><span class="o">-&gt;</span><span class="n">bfact</span> <span class="o">=</span> <span class="n">y</span><span class="o">-&gt;</span><span class="n">bfact</span> <span class="o">-</span> <span class="n">old_x_bfact</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="n">y</span><span class="o">-&gt;</span><span class="n">left</span> <span class="o">=</span> <span class="n">x</span><span class="o">-&gt;</span><span class="n">right</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">x</span><span class="o">-&gt;</span><span class="n">right</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">){</span>
+      <span class="n">x</span><span class="o">-&gt;</span><span class="n">right</span><span class="o">-&gt;</span><span class="n">parent</span> <span class="o">=</span> <span class="n">y</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">x</span><span class="o">-&gt;</span><span class="n">parent</span> <span class="o">=</span> <span class="n">p</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">p</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">){</span>
+      <span class="k">if</span> <span class="p">(</span> <span class="n">y</span> <span class="o">==</span> <span class="n">p</span><span class="o">-&gt;</span><span class="n">left</span><span class="p">){</span>
+        <span class="n">p</span><span class="o">-&gt;</span><span class="n">left</span> <span class="o">=</span> <span class="n">x</span><span class="p">;</span>
+      <span class="p">}</span>
+      <span class="k">else</span> <span class="k">if</span><span class="p">(</span> <span class="n">y</span> <span class="o">==</span> <span class="n">p</span><span class="o">-&gt;</span><span class="n">right</span><span class="p">){</span>
+        <span class="n">p</span><span class="o">-&gt;</span><span class="n">right</span> <span class="o">=</span> <span class="n">x</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">p</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">){</span>
+      <span class="n">tree</span><span class="o">-&gt;</span><span class="n">root</span> <span class="o">=</span> <span class="n">x</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">x</span><span class="o">-&gt;</span><span class="n">right</span> <span class="o">=</span> <span class="n">y</span><span class="p">;</span>
+    <span class="n">y</span><span class="o">-&gt;</span><span class="n">parent</span> <span class="o">=</span> <span class="n">x</span><span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<h3 id="references">References:</h3>
+
+<p>[1]: <a href="https://en.wikipedia.org/wiki/Self-balancing_binary_search_tree ">https://en.wikipedia.org/wiki/Self-balancing_binary_search_tree </a></p>
+
+<p>[2]: <a href="https://www.tutorialspoint.com/data_structures_algorithms/avl_tree_algorithm.htm">https://www.tutorialspoint.com/data_structures_algorithms/avl_tree_algorithm.htm</a></p>
+
+  </div>
+</article>
+
+</body>
+</html>
