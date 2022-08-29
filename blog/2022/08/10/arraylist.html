@@ -63,7 +63,7 @@ elements to avoid shifting and achieve a better armotized runtime, I have
 thought maybe applying that same principle to other array-based structure could
 have me utilize the cache-friendly power of array. 🤔</p>
 
-<h3 id="linked-list">Linked List</h3>
+<h2 id="linked-list">Linked List</h2>
 
 <p>Classic LinkedList is a datastructures where items can be push/remove from the
 front/back with FIFO order in \(O(1)\), behaving similarly to a queue. But
@@ -92,7 +92,7 @@ which in the context of keeping track for LRU cache, seems like a reasonable ass
 index position in as in Queue. <code>lenghth</code> is there to keep track of how many
 available items we have in the array.</p>
 
-<h4 id="insertion">Insertion</h4>
+<h3 id="insertion">Insertion</h3>
 
 <p>Insertion is identical to the well known ring queue, head / tail pointers wrap
 around the array index. And the whole array get reallocate once the capacity overflow</p>
@@ -119,7 +119,7 @@ around the array index. And the whole array get reallocate once the capacity ove
 }
 </code></pre>
 
-<h4 id="pop--removal">Pop / Removal</h4>
+<h3 id="pop--removal">Pop / Removal</h3>
 
 <p>For middle-of-array removal, we leverage the <code>Option</code> type of Rust to
 implements tombstone deletion in which the value is set to <code>None</code></p>
@@ -157,7 +157,7 @@ implements tombstone deletion in which the value is set to <code>None</code></p>
 }
 </code></pre>
 
-<h4 id="redistribution">Redistribution</h4>
+<h3 id="redistribution">Redistribution</h3>
 
 <p>During insertions and removals, the array will have to be <code>pack()</code> and
 <code>extend()</code> accordingly. Before doing that though,  we will define some density

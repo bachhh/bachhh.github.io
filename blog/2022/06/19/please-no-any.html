@@ -56,30 +56,18 @@
 
 <article>
   <div class="container">
-    <h1 id="please-no-any">Please no Any</h1>
-
-<p>The omnipresence <code>interface</code> in Go that is used everywhere, the empty
-<code>interface{}</code> is such a bait design that is begging for user errors.</p>
-
-<p>If your library happens to provide a very specific object serializier like protobuf,
-then please not.</p>
+    <h1 id="any">Any</h1>
 
 <pre><code class="language-go">func (c *Context) ProtoBuf(code int, obj any) {
 	c.Render(code, render.ProtoBuf{Data: obj})
 </code></pre>
 
-<ol>
-  <li>The underlying logic defer to a <code>proto.Message</code> interface to serialize your objects, so there’s no reason 
- to use an <code>interface{}</code> here, please just use the specific interface that you actuall need.</li>
-  <li>Type assertion without checking in Go lead to panic. The standard
-<code>json.Marshal</code> provide tons of fallback options unless user explicitly do
-something wrong.</li>
-</ol>
+<p>We have a protobuf struct generated with <code>gogoproto</code> while Gin is using <code>Google
+protobuf</code> and the 2 objects generated are in fact incompatible. And Gin using
+an <code>interface{}</code> ( which only panic at runtime ) hid this fact.</p>
 
-<p>We have a protobuf struct generated with
-<code>gogoproto</code> while Gin is using <code>Google protobuf</code> and the 2 objects generated
-are in fact incompatible. And Gin using an <code>interface{}</code> (which only panic at
-runtime) hid this fact.</p>
+<p>The <code>json.Marshal</code> use of <code>any</code> feels more reasonable since they provide tons of
+fallback options.</p>
 
   </div>
 </article>
