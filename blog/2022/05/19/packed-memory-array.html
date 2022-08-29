@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title> Packed memory array </title>
+  <meta name="viewport" content="width=device-width">
+
+  <!-- syntax highlighting CSS -->
+  <link rel="stylesheet" href="/css/syntax.css">
+  <link rel="stylesheet" href="/css/codeblock.scss">
+
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/main.css">
+  <link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+
+   <!--- MathJax -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+
+  <!-- Fonts -->
+  <link href='http://fonts.googleapis.com/css?family=Bitter:400,700,400italic|Open+Sans:400italic,600italic,400,600' rel='stylesheet' type='text/css'>
+</head>
+<body>
+  <header style="background-image: url(/images/akira.jpg);">
+  <div class="container post-container">
+    <a href="/" class="home_button"></a>
+    <div class="inner-container">
+      <h1>Packed memory array</h1>
+      <ul class="meta">
+        <li>
+          <span>
+            Published
+          </span>
+          19 May 2022
+        </li>
+        <li>
+          <span>
+            Category
+          </span>
+          blog
+        </li>
+        <li>
+          <span>
+            Tags
+          </span>
+          
+        </li>
+
+      </ul>
+    </div>
+
+  </div>
+</header>
+
+<article>
+  <div class="container">
+    <h1 id="packed-memory-array">Packed Memory Array</h1>
+
+<p>I recently discovered a fun little DS <a href="https://www3.cs.stonybrook.edu/~bender/newpub/BenderHu07-TODS.pdf">Packed Memory
+Array</a> which
+allow me to construct an ordered-list with fast ( armotized logn ) insert / deletion and fast (loglog) lookup at the same time.</p>
+
+<p>The little fun side-quest thing about PMA is the <code>Rebalance()</code> routine which
+is ran to redistribute all elements
+in the array.</p>
+
+<pre><code>Given a randomly distributed array with "values" ( elements &gt; 0 ) and zeros
+i.e.: [1 2 4 5 0 0 0 0 0 6]. All "values" are sorted in ascending order.
+Rebalance the array so that the "value" elements are evenly spaced between the zeros
+</code></pre>
+<p>Assume for now that the density of “values” in our array is exactly rational
+i.e.: $1/x$, and it is no greater than $1/2$.</p>
+
+<p>Implementing <code>Rebalance</code> using a copy array would cost $O(n)$ space which kind
+of defeating the purpose of using PMA in storage engine like B-tree.</p>
+
+<p>To solve this in $O(n)$ time and $O(1)$ space, we should approach this by ( thanks to my friend ) doing 2 passes  : 
+If we know the array <code>[x x x 0 0 0 0]</code> is trivial to rebalance, then transform
+every array into the form <code>[x x x x 0 0 0 0]</code> with the first pass.</p>
+
+<pre><code class="language-go">// shift all values to the front of array, keep sort order 
+count := 0
+for i := 0; i &lt; len(array); i++{
+    if array[i] != EMPTY {
+        array[count] = array[i]
+        array[i] = 0
+        count++
+    }
+}
+
+// moving from end to front, swap every value element into their correct place
+spacing := len(array) /count
+y := len(array) -1
+for count &gt; 0 {
+    y -= spacing
+    array[y] = count
+    array[count] = 0
+    count--
+}
+</code></pre>
+
+  </div>
+</article>
+
+</body>
+</html>

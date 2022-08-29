@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title> Array LinkedList </title>
+  <meta name="viewport" content="width=device-width">
+
+  <!-- syntax highlighting CSS -->
+  <link rel="stylesheet" href="/css/syntax.css">
+  <link rel="stylesheet" href="/css/codeblock.scss">
+
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/main.css">
+  <link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+
+   <!--- MathJax -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+
+  <!-- Fonts -->
+  <link href='http://fonts.googleapis.com/css?family=Bitter:400,700,400italic|Open+Sans:400italic,600italic,400,600' rel='stylesheet' type='text/css'>
+</head>
+<body>
+  <header style="background-image: url(/images/akira.jpg);">
+  <div class="container post-container">
+    <a href="/" class="home_button"></a>
+    <div class="inner-container">
+      <h1>Array LinkedList</h1>
+      <ul class="meta">
+        <li>
+          <span>
+            Published
+          </span>
+          10 Aug 2022
+        </li>
+        <li>
+          <span>
+            Category
+          </span>
+          blog
+        </li>
+        <li>
+          <span>
+            Tags
+          </span>
+          
+        </li>
+
+      </ul>
+    </div>
+
+  </div>
+</header>
+
+<article>
+  <div class="container">
+    <h1 id="array-linked-list">Array Linked List</h1>
+
+<p>Following the idea of Packed Memory Array where you can leave gaps between
+elements to avoid shifting and achieve a better armotized runtime, I have
+thought maybe applying that same principle to other array-based structure could
+have me utilize the cache-friendly power of array. 🤔</p>
+
+<h3 id="linked-list">Linked List</h3>
+
+<p>Classic LinkedList is a datastructures where items can be push/remove from the
+front/back with FIFO order in \(O(1)\), behaving similarly to a queue. But
+LinkedList does allow us to “splice” item in the middle which the basis for
+building LRU cache.</p>
+
+<p>To convert to an Array, I’ll try re-implementing all of LinkedList public
+interface. I will just assume our item to be positive integer for simplicity,
+which in the context of keeping track for LRU cache, seems like a reasonable assumption.</p>
+
+<pre><code class="language-rust">pub struct ArrayList {
+    array: Vec&lt;Option&lt;u32&gt;&gt;,
+    // call to pop() will return list[head]
+    head: usize,
+    // call to push() will put element into list[tail]
+    // tail &gt;= (head + length) % capacity,
+    // if array is densely packed, tail == head + length
+    // if array is empty, head == tail
+    tail: usize,
+
+    length: usize,
+}
+</code></pre>
+
+<p>My “list” consists of one heap allocated array, <code>head</code> and <code>tail</code> are analogous
+index position in as in Queue. <code>lenghth</code> is there to keep track of how many
+available items we have in the array.</p>
+
+<h4 id="insertion">Insertion</h4>
+
+<p>Insertion is identical to the well known ring queue, head / tail pointers wrap
+around the array index. And the whole array get reallocate once the capacity overflow</p>
+
+<pre><code class="language-rust">impl ArrayList {
+    pub fn new() -&gt; ArrayList {
+        ArrayList {
+            array: Vec::with_capacity(16),
+            head: 0,
+            tail: 0,
+            length: 0,
+        }
+    }
+
+    pub fn push(&amp;mut self, entry: u32) {
+        self.array[self.tail] = Some(entry);
+        self.tail = self.tail + 1 % self.array.capacity();
+        self.length += 1;
+
+        if self.length == self.array.capacity() {
+            self.extend();
+        }
+    }
+}
+</code></pre>
+
+<h4 id="pop--removal">Pop / Removal</h4>
+
+<p>For middle-of-array removal, we leverage the <code>Option</code> type of Rust to
+implements tombstone deletion in which the value is set to <code>None</code></p>
+
+<pre><code class="language-rust">pub fn remove(&amp;mut self, i: usize) -&gt; Option&lt;u32&gt; {
+    let val = self.array[i];
+    self.array[i] = None;
+    self.length -= 1;
+    self.pack();
+    val
+}
+</code></pre>
+
+<p>When <code>pop()</code>-ing from the array, we skip over tombstoned entries.</p>
+
+<pre><code class="language-rust">pub fn pop(&amp;mut self) -&gt; Option&lt;u32&gt; {
+    if self.length == 0 {
+        return None;
+    }
+
+    self.length -= 1;
+    let ret = self.array[self.tail].unwrap();
+    self.tail = (self.tail + 1) % self.array.capacity();
+
+    // advance self.tail until we encounter Some value or self.tail == self.head
+    while let None = self.array[self.tail] {
+        if self.tail == self.head {
+            break;
+        }
+        self.tail = (self.tail + 1) % self.array.capacity();
+    }
+
+    self.pack();
+    Some(ret)
+}
+</code></pre>
+
+<h4 id="redistribution">Redistribution</h4>
+
+<p>During insertions and removals, the array will have to be <code>pack()</code> and
+<code>extend()</code> accordingly. Before doing that though,  we will define some density
+metric for our array</p>
+
+<pre><code class="language-rust">const MIN_DENSITY: f64 = 0.5;
+</code></pre>
+
+<p>The minimum density is an indication of when we should <code>pack()</code> our array.
+Packing eliminates all <code>None</code> entries between the space of <code>head</code> and <code>tail</code>
+index and moving the <code>Some</code> entries closely together. Packing is skipped if 
+the array still satisfies the minimum density.</p>
+
+<pre><code class="language-rust">fn pack(&amp;mut self) {
+    // array still satisfies minimum density, skip
+    if self.length &gt; self.wrapped_size(self.tail, self.head, self.array.capacity())*MIN_DENSITY {
+        return;
+    }
+    let mut write = self.tail;
+    let mut read = write;
+    while self.wrapped_size(self.tail, read, self.array.capacity()) &lt; self.array.capacity() {
+        if let None = self.array[read] {
+            read = (read + 1) % self.array.capacity();
+            continue;
+        }
+        if let None = self.array[write] {
+            self.array.swap(read, write);
+        }
+        read = (read + 1) % self.array.capacity();
+        write = (write + 1) % self.array.capacity();
+    }
+}
+</code></pre>
+
+<p>We also extend our array everytime we have no more space to insert a la
+<code>head</code> index == <code>tail</code> index. The new size is chosen so that the new array density 
+falls right on the average of (1.0, MIN_DENSITY).</p>
+
+<pre><code class="language-rust">fn extend(&amp;mut self) {
+    if self.length &lt; self.array.capacity() {
+        return;
+    }
+    let old_capacity = self.array.capacity();
+    let new_capacity = (old_capacity as f64) / ((1.0 + MIN_DENSITY) * 2.0);
+    self.array.reserve(new_capacity as usize);
+
+    for i in old_capacity..=self.array.capacity() {
+        self.array[i] = None;
+    }
+
+    if self.tail &gt; self.head {
+        return;
+    }
+
+    // tail parts are wrapped around, reinsert into the newe list tail
+    let old_tail = self.tail;
+    self.tail = old_capacity;
+    for i in 0..old_tail {
+        if let Some(_) = self.array[i] {
+            self.tail = self.tail + 1 % self.array.capacity();
+            self.array.swap(self.tail, i); // list[i] is now None
+        }
+    }
+}
+</code></pre>
+
+<p><strong>Shrinking</strong> the underlying <code>Vector</code> relatively straight forward, but the
+condition when to do it is context-dependent. Shrinking is only useful if
+you’re tight on memory budget, or the underlying Vector exceed the size of L3
+cache which would affect performance.</p>
+
+
+  </div>
+</article>
+
+</body>
+</html>

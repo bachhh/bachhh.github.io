@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title> Please no Any </title>
+  <meta name="viewport" content="width=device-width">
+
+  <!-- syntax highlighting CSS -->
+  <link rel="stylesheet" href="/css/syntax.css">
+  <link rel="stylesheet" href="/css/codeblock.scss">
+
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/main.css">
+  <link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+
+   <!--- MathJax -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+
+  <!-- Fonts -->
+  <link href='http://fonts.googleapis.com/css?family=Bitter:400,700,400italic|Open+Sans:400italic,600italic,400,600' rel='stylesheet' type='text/css'>
+</head>
+<body>
+  <header style="background-image: url(/images/akira.jpg);">
+  <div class="container post-container">
+    <a href="/" class="home_button"></a>
+    <div class="inner-container">
+      <h1>Please no Any</h1>
+      <ul class="meta">
+        <li>
+          <span>
+            Published
+          </span>
+          19 Jun 2022
+        </li>
+        <li>
+          <span>
+            Category
+          </span>
+          blog
+        </li>
+        <li>
+          <span>
+            Tags
+          </span>
+          
+        </li>
+
+      </ul>
+    </div>
+
+  </div>
+</header>
+
+<article>
+  <div class="container">
+    <h1 id="please-no-any">Please no Any</h1>
+
+<p>The omnipresence <code>interface</code> in Go that is used everywhere, the empty
+<code>interface{}</code> is such a bait design that is begging for user errors.</p>
+
+<p>If your library happens to provide a very specific object serializier like protobuf,
+then please not.</p>
+
+<pre><code class="language-go">func (c *Context) ProtoBuf(code int, obj any) {
+	c.Render(code, render.ProtoBuf{Data: obj})
+</code></pre>
+
+<ol>
+  <li>The underlying logic defer to a <code>proto.Message</code> interface to serialize your objects, so there’s no reason 
+ to use an <code>interface{}</code> here, please just use the specific interface that you actuall need.</li>
+  <li>Type assertion without checking in Go lead to panic. The standard
+<code>json.Marshal</code> provide tons of fallback options unless user explicitly do
+something wrong.</li>
+</ol>
+
+<p>We have a protobuf struct generated with
+<code>gogoproto</code> while Gin is using <code>Google protobuf</code> and the 2 objects generated
+are in fact incompatible. And Gin using an <code>interface{}</code> (which only panic at
+runtime) hid this fact.</p>
+
+  </div>
+</article>
+
+</body>
+</html>
